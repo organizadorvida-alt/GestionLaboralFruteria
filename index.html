@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión Laboral Frutería</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/inter@5.0.0/index.min.css">
+    <style>
+        :root {
+            --bg-main: #F9F9F9;
+            --panel-bg: #D4EAC8;
+            --panel-bg-light: #E8F5E1;
+            --accent: #27AE60;
+            --accent-hover: #219150;
+            --text-main: #1F2937;
+            --text-muted: #4B5563;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
+        }
+
+        .panel {
+            background-color: var(--panel-bg);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: box-shadow 0.3s ease, transform 0.3s ease;
+        }
+
+        .panel:hover {
+            box-shadow: 0 8px 24px rgba(39, 174, 96, 0.12);
+        }
+
+        .panel-inner {
+            background-color: #FFFFFF;
+            border-radius: 8px;
+            padding: 1.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .btn-primary {
+            background-color: var(--accent);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--accent-hover);
+            box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background-color: #FFFFFF;
+            color: var(--accent);
+            border: 2px solid var(--accent);
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--panel-bg-light);
+            box-shadow: 0 4px 12px rgba(39, 174, 96, 0.15);
+        }
+
+        .btn-danger {
+            background-color: #EF4444;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            transition: all 0.2s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .btn-danger:hover {
+            background-color: #DC2626;
+            box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+        }
+
+        .input-field {
+            width: 100%;
+            padding: 0.5rem 0.75rem;
+            border: 1px solid #D1D5DB;
+            border-radius: 6px;
+            background-color: #FFFFFF;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .input-field:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.1);
+        }
+
+        .record-card {
+            background-color: #FFFFFF;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border-left: 4px solid var(--accent);
+            transition: box-shadow 0.3s ease, transform 0.3s ease;
+        }
+
+        .record-card:hover {
+            box-shadow: 0 4px 12px rgba(39, 174, 96, 0.15);
+            transform: translateX(4px);
+        }
+
+        .stopwatch-display {
+            font-family: 'Courier New', monospace;
+            font-size: 2.5rem;
+            font-weight: bold;
+            color: var(--accent);
+            text-align: center;
+            padding: 1rem;
+            background-color: #FFFFFF;
+            border-radius: 8px;
+            letter-spacing: 2px;
+        }
+
+        .scale-container {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .scale-btn {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 50%;
+            border: 2px solid #D1D5DB;
+            background-color: #FFFFFF;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .scale-btn:hover {
+            border-color: var(--accent);
+            box-shadow: 0 2px 8px rgba(39, 174, 96, 0.2);
+        }
+
+        .scale-btn.active {
+            background-color: var(--accent);
+            color: white;
+            border-color: var(--accent);
+        }
+
+        .task-row {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.5rem;
+            align-items: center;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8">
+
+    <header class="text-center mb-8">
+        <svg class="h-20 mx-auto mb-2 text-[#27AE60]" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C10.9 2 10 2.9 10 4C10 4.74 10.4 5.38 11 5.73V6C11 7.66 9.66 9 8 9C7.31 9 6.68 8.76 6.18 8.36C5.76 8.03 5.2 8.03 4.78 8.36C4.28 8.76 3.65 9 3 9C1.34 9 0 7.66 0 6C0 5.26 0.4 4.62 1 4.27V4C1 2.9 1.9 2 3 2C4.1 2 5 2.9 5 4C5 4.74 4.6 5.38 4 5.73V6C4 6.55 4.45 7 5 7C5.55 7 6 6.55 6 6V5.73C5.4 5.38 5 4.74 5 4C5 2.9 5.9 2 7 2C8.1 2 9 2.9 9 4C9 4.74 8.6 5.38 8 5.73V6C8 6.55 8.45 7 9 7C9.55 7 10 6.55 10 6V5.73C9.4 5.38 9 4.74 9 4C9 2.9 9.9 2 11 2C12.1 2 13 2.9 13 4C13 4.74 12.6 5.38 12 5.73V6C12 7.66 13.34 9 15 9C15.69 9 16.32 8.76 16.82 8.36C17.24 8.03 17.8 8.03 18.22 8.36C18.72 8.76 19.35 9 20 9C21.66 9 23 7.66 23 6C23 5.26 22.6 4.62 22 4.27V4C22 2.9 21.1 2 20 2C18.9 2 18 2.9 18 4C18 4.74 18.4 5.38 19 5.73V6C19 6.55 18.55 7 18 7C17.45 7 17 6.55 17 6V5.73C17.6 5.38 18 4.74 18 4C18 2.9 17.1 2 16 2C14.9 2 14 2.9 14 4C14 4.74 14.4 5.38 15 5.73V6C15 6.55 14.55 7 14 7C13.45 7 13 6.55 13 6V5.73C13.6 5.38 14 4.74 14 4C14 2.9 13.1 2 12 2ZM12 10C7.58 10 4 13.58 4 18C4 20.76 6.24 23 9 23H15C17.76 23 20 20.76 20 18C20 13.58 16.42 10 12 10Z"/>
+        </svg>
+        <h1 class="text-3xl font-bold text-gray-800">GESTIÓN LABORAL FRUTERÍA</h1>
+        <p class="text-gray-500 mt-1">Sistema de Evaluación y Control de Tiempos</p>
+    </header>
+
+    <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Panel Superior: Evaluación Activa -->
+        <div class="lg:col-span-2 space-y-6">
+            <div class="panel">
+                <h2 class="text-xl font-bold text-gray-800 mb-4 border-b-2 border-[#27AE60] pb-2">📋 Evaluación Activa</h2>
+                
+                <!-- Sección 1: Datos Generales -->
+                <div class="panel-inner">
+                    <h3 class="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                        <span class="bg-[#27AE60] text-white w-6 h-6 rounded-full flex items-center justify-center text-sm">1</span>
+                        Datos Generales
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-1">Nombre del Trabajador</label>
+                            <select id="worker-name" class="input-field">
+                                <option value="">Seleccionar...</option>
+                                <option value="Nancy">Nancy</option>
+                                <option value="Maria">Maria</option>
+                                <option value="Fabiola">Fabiola</option>
+                                <option value="Leomary">Leomary</option>
+                                <option value="Javier">Javier</option>
+                                <option value="Andres">Andres</option>
+                                <option value="Keyber">Keyber</option>
+                                <option value="Antony">Antony</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-1">Cargo Actual</label>
+                            <input type="text" id="worker-cargo" class="input-field" placeholder="Ej: Vendedor, Cajero...">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-1">Tiempo trabajando en la empresa</label>
+                            <input type="text" id="worker-time" class="input-field" placeholder="Ej: Menos de 3 meses, 6 meses...">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección 2: Encuesta de Satisfacción Laboral -->
+                <div class="panel-inner">
+                    <h3 class="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                        <span class="bg-[#27AE60] text-white w-6 h-6 rounded-full flex items-center justify-center text-sm">2</span>
+                        Encuesta de Satisfacción Laboral (1 = Muy insatisfecho, 5 = Muy satisfecho)
+                    </h3>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-2">¿Qué tan satisfecho estás con las responsabilidades diarias de tu cargo actual?</label>
+                            <div class="scale-container" id="scale-responsabilidades-diarias">
+                                <button type="button" class="scale-btn" data-val="1">1</button>
+                                <button type="button" class="scale-btn" data-val="2">2</button>
+                                <button type="button" class="scale-btn" data-val="3">3</button>
+                                <button type="button" class="scale-btn" data-val="4">4</button>
+                                <button type="button" class="scale-btn" data-val="5">5</button>
+                            </div>
+                            <input type="hidden" id="val-responsabilidades-diarias">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-2">¿Sientes que cuentas con las herramientas, información y recursos físicos necesarios para realizar tu trabajo de forma eficiente?</label>
+                            <div class="scale-container" id="scale-herramientas-recursos">
+                                <button type="button" class="scale-btn" data-val="1">1</button>
+                                <button type="button" class="scale-btn" data-val="2">2</button>
+                                <button type="button" class="scale-btn" data-val="3">3</button>
+                                <button type="button" class="scale-btn" data-val="4">4</button>
+                                <button type="button" class="scale-btn" data-val="5">5</button>
+                            </div>
+                            <input type="hidden" id="val-herramientas-recursos">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-2">¿Cómo evalúas la claridad de las instrucciones y la comunicación con el resto del equipo durante la jornada?</label>
+                            <div class="scale-container" id="scale-comunicacion">
+                                <button type="button" class="scale-btn" data-val="1">1</button>
+                                <button type="button" class="scale-btn" data-val="2">2</button>
+                                <button type="button" class="scale-btn" data-val="3">3</button>
+                                <button type="button" class="scale-btn" data-val="4">4</button>
+                                <button type="button" class="scale-btn" data-val="5">5</button>
+                            </div>
+                            <input type="hidden" id="val-comunicacion">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-1">En tu día a día, ¿qué tarea o proceso consideras que es lento, repetitivo o que podría hacerse de una manera más sencilla?</label>
+                            <textarea id="tarea-lenta" class="input-field h-20" placeholder="Describa el proceso..."></textarea>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-1">¿Existe alguna función o área dentro del negocio en la que no trabajas actualmente, pero sobre la cual te gustaría aprender o capacitarte?</label>
+                            <textarea id="area-capacitacion" class="input-field h-20" placeholder="Describa el área de interés..."></textarea>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-1">Si pudieras proponer un solo cambio en la dinámica de trabajo actual para que tú y tu equipo rindan mejor, ¿cuál sería?</label>
+                            <textarea id="propuesta-cambio" class="input-field h-20" placeholder="Describa su propuesta..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección 3: Tareas y Herramientas -->
+                <div class="panel-inner">
+                    <h3 class="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                        <span class="bg-[#27AE60] text-white w-6 h-6 rounded-full flex items-center justify-center text-sm">3</span>
+                        Tareas y Herramientas
+                    </h3>
+                    
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-600 mb-2">Lista de Tareas (Categoría y Detalle)</label>
+                        <div id="dynamic-tasks-container" class="space-y-2 mb-2"></div>
+                        <button type="button" onclick="addTaskRow()" class="btn-secondary text-sm w-full md:w-auto">+ Añadir Tarea</button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-1">Herramientas utilizadas</label>
+                            <select id="tools-used" class="input-field">
+                                <option value="">Seleccionar herramienta...</option>
+                                <option value="Balanza">Balanza</option>
+                                <option value="Caja Registradora">Caja Registradora</option>
+                                <option value="Cuchillos de corte">Cuchillos de corte</option>
+                                <option value="Guantes de protección">Guantes de protección</option>
+                                <option value="Carretilla de transporte">Carretilla de transporte</option>
+                                <option value="Escáner de códigos">Escáner de códigos</option>
+                                <option value="Sistema POS">Sistema POS</option>
+                                <option value="Uniforme completo">Uniforme completo</option>
+                                <option value="Equipo de limpieza">Equipo de limpieza</option>
+                                <option value="Otro">Otro (especificar en observaciones)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-1">Tarea asignada principal</label>
+                            <select id="assigned-task" class="input-field">
+                                <option value="">Seleccionar tarea...</option>
+                                <option value="Surtido">Surtido</option>
+                                <option value="Cobro">Cobro</option>
+                                <option value="Limpieza">Limpieza</option>
+                                <option value="Supervisión">Supervisión</option>
+                                <option value="Bodega">Bodega</option>
+                                <option value="Atención al cliente">Atención al cliente</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección 4: Valoraciones -->
+                <div class="panel-inner">
+                    <h3 class="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                        <span class="bg-[#27AE60] text-white w-6 h-6 rounded-full flex items-center justify-center text-sm">4</span>
+                        Valoraciones Personales (1 = Muy mal, 5 = Muy bien)
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-2">¿Cómo te sientes en el trabajo?</label>
+                            <div class="scale-container" id="scale-sentimiento-trabajo">
+                                <button type="button" class="scale-btn" data-val="1">1</button>
+                                <button type="button" class="scale-btn" data-val="2">2</button>
+                                <button type="button" class="scale-btn" data-val="3">3</button>
+                                <button type="button" class="scale-btn" data-val="4">4</button>
+                                <button type="button" class="scale-btn" data-val="5">5</button>
+                            </div>
+                            <input type="hidden" id="val-sentimiento-trabajo">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-2">¿Cómo te sientes con tu sueldo actual?</label>
+                            <div class="scale-container" id="scale-sentimiento-sueldo">
+                                <button type="button" class="scale-btn" data-val="1">1</button>
+                                <button type="button" class="scale-btn" data-val="2">2</button>
+                                <button type="button" class="scale-btn" data-val="3">3</button>
+                                <button type="button" class="scale-btn" data-val="4">4</button>
+                                <button type="button" class="scale-btn" data-val="5">5</button>
+                            </div>
+                            <input type="hidden" id="val-sentimiento-sueldo">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-2">¿Cómo te sientes con el equipo?</label>
+                            <div class="scale-container" id="scale-sentimiento-equipo">
+                                <button type="button" class="scale-btn" data-val="1">1</button>
+                                <button type="button" class="scale-btn" data-val="2">2</button>
+                                <button type="button" class="scale-btn" data-val="3">3</button>
+                                <button type="button" class="scale-btn" data-val="4">4</button>
+                                <button type="button" class="scale-btn" data-val="5">5</button>
+                            </div>
+                            <input type="hidden" id="val-sentimiento-equipo">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-2">¿Cómo te sientes con el jefe?</label>
+                            <div class="scale-container" id="scale-sentimiento-jefe">
+                                <button type="button" class="scale-btn" data-val="1">1</button>
+                                <button type="button" class="scale-btn" data-val="2">2</button>
+                                <button type="button" class="scale-btn" data-val="3">3</button>
+                                <button type="button" class="scale-btn" data-val="4">4</button>
+                                <button type="button" class="scale-btn" data-val="5">5</button>
+                            </div>
+                            <input type="hidden" id="val-sentimiento-jefe">
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="block text-sm font-medium text-gray-600 mb-2">¿Cómo te sientes con tus responsabilidades?</label>
+                            <div class="scale-container" id="scale-sentimiento-responsabilidades">
+                                <button type="button" class="scale-btn" data-val="1">1</button>
+                                <button type="button" class="scale-btn" data-val="2">2</button>
+                                <button type="button" class="scale-btn" data-val="3">3</button>
+                                <button type="button" class="scale-btn" data-val="4">4</button>
+                                <button type="button" class="scale-btn" data-val="5">5</button>
+                            </div>
+                            <input type="hidden" id="val-sentimiento-responsabilidades">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sección 5: Observaciones -->
+                <div class="panel-inner">
+                    <h3 class="font-semibold text-gray-700 mb-3 flex items-center gap-2">
+                        <span class="bg-[#27AE60] text-white w-6 h-6 rounded-full flex items-center justify-center text-sm">5</span>
+                        Observaciones del Consultor
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-1">Desviación de tarea</label>
+                            <textarea id="task-deviation" class="input-field h-20" placeholder="Describa..."></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-600 mb-1">Nivel de cumplimiento parcial</label>
+                            <textarea id="partial-compliance" class="input-field h-20" placeholder="Describa..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="flex gap-4 mt-4">
+                    <button onclick="saveRecord()" class="btn-primary flex-1 py-3 text-lg">💾 Guardar Registro</button>
+                    <button onclick="resetForm()" class="btn-secondary flex-1 py-3 text-lg">🔄 Limpiar Formulario</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel Aislado: Medición de Tiempos -->
+        <div class="lg:col-span-1">
+            <div class="panel sticky top-4" style="background-color: #A8E6CF;">
+                <h2 class="text-xl font-bold text-gray-800 mb-4 border-b-2 border-[#27AE60] pb-2">⏱️ Medición de Tiempos</h2>
+                <div class="panel-inner text-center">
+                    <div class="mb-4 text-left">
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Tarea que se está midiendo</label>
+                        <input type="text" id="timer-task-name" class="input-field" placeholder="Ej: Surtido de manzanas">
+                    </div>
+                    <div id="stopwatch-display" class="stopwatch-display mb-4">00:00.00</div>
+                    <div class="flex justify-center gap-2 mb-4">
+                        <button onclick="startTimer()" class="btn-primary">▶ Iniciar</button>
+                        <button onclick="pauseTimer()" class="btn-secondary">⏸ Pausar</button>
+                        <button onclick="stopTimer()" class="btn-danger">⏹ Detener</button>
+                    </div>
+                    <div class="border-t pt-4">
+                        <label class="block text-sm font-medium text-gray-600 mb-1">Tiempo manual (minutos)</label>
+                        <input type="number" id="manual-time" class="input-field text-center" placeholder="0" min="0">
+                    </div>
+                    <p class="text-xs text-gray-500 mt-3 italic">* Solo se mide una tarea a la vez.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel Inferior: Gestor de Registros -->
+        <div class="lg:col-span-3">
+            <div class="panel">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 border-b-2 border-[#27AE60] pb-2 gap-4">
+                    <h2 class="text-xl font-bold text-gray-800">📂 Gestor de Registros</h2>
+                    <button onclick="exportCSV()" class="btn-secondary">📥 Exportar CSV Completo</button>
+                </div>
+                <div id="records-container" class="space-y-2">
+                    <p class="text-gray-500 text-center py-4">No hay registros guardados.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- State Management ---
+        let records = JSON.parse(localStorage.getItem('fruteria_registros_v2')) || [];
+        let editingId = null;
+        let dynamicTaskList = [];
+
+        // --- Scale Buttons Logic ---
+        function setupScales() {
+            const scaleIds = [
+                'responsabilidades-diarias', 'herramientas-recursos', 'comunicacion',
+                'sentimiento-trabajo', 'sentimiento-sueldo', 'sentimiento-equipo',
+                'sentimiento-jefe', 'sentimiento-responsabilidades'
+            ];
+            
+            scaleIds.forEach(id => {
+                const container = document.getElementById(`scale-${id}`);
+                const hiddenInput = document.getElementById(`val-${id}`);
+                if (!container || !hiddenInput) return;
+
+                container.querySelectorAll('.scale-btn').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        container.querySelectorAll('.scale-btn').forEach(b => b.classList.remove('active'));
+                        this.classList.add('active');
+                        hiddenInput.value = this.dataset.val;
+                    });
+                });
+            });
+        }
+
+        // --- Dynamic Task List Logic ---
+        function addTaskRow() {
+            dynamicTaskList.push({ category: '', detail: '' });
+            renderTaskRows();
+        }
+
+        function removeTaskRow(index) {
+            dynamicTaskList.splice(index, 1);
+            renderTaskRows();
+        }
+
+        function updateTaskRow(index, field, value) {
+            dynamicTaskList[index][field] = value;
+        }
+
+        function renderTaskRows() {
+            const container = document.getElementById('dynamic-tasks-container');
+            container.innerHTML = dynamicTaskList.map((task, index) => `
+                <div class="task-row">
+                    <select class="input-field w-1/3" onchange="updateTaskRow(${index}, 'category', this.value)">
+                        <option value="">Categoría...</option>
+                        <option value="Surtido" ${task.category === 'Surtido' ? 'selected' : ''}>Surtido</option>
+                        <option value="Limpieza" ${task.category === 'Limpieza' ? 'selected' : ''}>Limpieza</option>
+                        <option value="Cobro" ${task.category === 'Cobro' ? 'selected' : ''}>Cobro</option>
+                        <option value="Bodega" ${task.category === 'Bodega' ? 'selected' : ''}>Bodega</option>
+                        <option value="Atención" ${task.category === 'Atención' ? 'selected' : ''}>Atención</option>
+                        <option value="Otro" ${task.category === 'Otro' ? 'selected' : ''}>Otro</option>
+                    </select>
+                    <input type="text" class="input-field flex-1" placeholder="Detalle de la tarea..." 
+                           value="${task.detail}" oninput="updateTaskRow(${index}, 'detail', this.value)">
+                    <button type="button" onclick="removeTaskRow(${index})" class="btn-danger w-8 h-8 flex items-center justify-center p-0">&times;</button>
+                </div>
+            `).join('');
+        }
+
+        // --- Stopwatch Logic ---
+        let timerInterval = null;
+        let elapsedTime = 0;
+        let isRunning = false;
+
+        function updateStopwatchDisplay() {
+            const minutes = Math.floor(elapsedTime / 60000);
+            const seconds = Math.floor((elapsedTime % 60000) / 1000);
+            const ms = Math.floor((elapsedTime % 1000) / 10);
+            document.getElementById('stopwatch-display').textContent = 
+                `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}.${String(ms).padStart(2, '0')}`;
+        }
+
+        function startTimer() {
+            if (!isRunning) {
+                isRunning = true;
+                const startTime = Date.now() - elapsedTime;
+                timerInterval = setInterval(() => {
+                    elapsedTime = Date.now() - startTime;
+                    updateStopwatchDisplay();
+                }, 10);
+            }
+        }
+
+        function pauseTimer() {
+            isRunning = false;
+            clearInterval(timerInterval);
+        }
+
+        function stopTimer() {
+            pauseTimer();
+            elapsedTime = 0;
+            updateStopwatchDisplay();
+        }
+
+        // --- Form Handling ---
+        function getFormData() {
+            return {
+                nombre: document.getElementById('worker-name').value,
+                cargo: document.getElementById('worker-cargo').value,
+                tiempoEmpresa: document.getElementById('worker-time').value,
+                valResponsabilidadesDiarias: document.getElementById('val-responsabilidades-diarias').value,
+                valHerramientasRecursos: document.getElementById('val-herramientas-recursos').value,
+                valComunicacion: document.getElementById('val-comunicacion').value,
+                tareaLenta: document.getElementById('tarea-lenta').value,
+                areaCapacitacion: document.getElementById('area-capacitacion').value,
+                propuestaCambio: document.getElementById('propuesta-cambio').value,
+                dynamicTasks: [...dynamicTaskList],
+                herramientas: document.getElementById('tools-used').value,
+                tareaAsignada: document.getElementById('assigned-task').value,
+                valSentimientoTrabajo: document.getElementById('val-sentimiento-trabajo').value,
+                valSentimientoSueldo: document.getElementById('val-sentimiento-sueldo').value,
+                valSentimientoEquipo: document.getElementById('val-sentimiento-equipo').value,
+                valSentimientoJefe: document.getElementById('val-sentimiento-jefe').value,
+                valSentimientoResponsabilidades: document.getElementById('val-sentimiento-responsabilidades').value,
+                desviacionTarea: document.getElementById('task-deviation').value,
+                cumplimientoParcial: document.getElementById('partial-compliance').value,
+                timerTaskName: document.getElementById('timer-task-name').value,
+                tiempoCronometro: document.getElementById('stopwatch-display').textContent,
+                tiempoManual: document.getElementById('manual-time').value,
+                fecha: new Date().toLocaleString('es-ES')
+            };
+        }
+
+        function populateForm(data) {
+            document.getElementById('worker-name').value = data.nombre || '';
+            document.getElementById('worker-cargo').value = data.cargo || '';
+            document.getElementById('worker-time').value = data.tiempoEmpresa || '';
+            
+            const setScale = (id, val) => {
+                document.getElementById(`val-${id}`).value = val || '';
+                document.querySelectorAll(`#scale-${id} .scale-btn`).forEach(b => {
+                    b.classList.toggle('active', b.dataset.val === val);
+                });
+            };
+
+            setScale('responsabilidades-diarias', data.valResponsabilidadesDiarias);
+            setScale('herramientas-recursos', data.valHerramientasRecursos);
+            setScale('comunicacion', data.valComunicacion);
+            setScale('sentimiento-trabajo', data.valSentimientoTrabajo);
+            setScale('sentimiento-sueldo', data.valSentimientoSueldo);
+            setScale('sentimiento-equipo', data.valSentimientoEquipo);
+            setScale('sentimiento-jefe', data.valSentimientoJefe);
+            setScale('sentimiento-responsabilidades', data.valSentimientoResponsabilidades);
+
+            document.getElementById('tarea-lenta').value = data.tareaLenta || '';
+            document.getElementById('area-capacitacion').value = data.areaCapacitacion || '';
+            document.getElementById('propuesta-cambio').value = data.propuestaCambio || '';
+            
+            dynamicTaskList = data.dynamicTasks || [];
+            renderTaskRows();
+            
+            document.getElementById('tools-used').value = data.herramientas || '';
+            document.getElementById('assigned-task').value = data.tareaAsignada || '';
+            document.getElementById('task-deviation').value = data.desviacionTarea || '';
+            document.getElementById('partial-compliance').value = data.cumplimientoParcial || '';
+            document.getElementById('timer-task-name').value = data.timerTaskName || '';
+            document.getElementById('manual-time').value = data.tiempoManual || '';
+        }
+
+        function saveRecord() {
+            const data = getFormData();
+            if (!data.nombre) {
+                alert('Por favor, seleccione un nombre de trabajador.');
+                return;
+            }
+
+            if (editingId) {
+                const index = records.findIndex(r => r.id === editingId);
+                if (index !== -1) {
+                    records[index] = { ...data, id: editingId };
+                }
+                editingId = null;
+            } else {
+                data.id = Date.now().toString();
+                records.push(data);
+            }
+
+            localStorage.setItem('fruteria_registros_v2', JSON.stringify(records));
+            resetForm();
+            renderRecords();
+            alert('Registro guardado exitosamente.');
+        }
+
+        function resetForm() {
+            document.getElementById('worker-name').value = '';
+            document.getElementById('worker-cargo').value = '';
+            document.getElementById('worker-time').value = '';
+            
+            ['responsabilidades-diarias', 'herramientas-recursos', 'comunicacion',
+             'sentimiento-trabajo', 'sentimiento-sueldo', 'sentimiento-equipo',
+             'sentimiento-jefe', 'sentimiento-responsabilidades'].forEach(id => {
+                document.getElementById(`val-${id}`).value = '';
+                document.querySelectorAll(`#scale-${id} .scale-btn`).forEach(b => b.classList.remove('active'));
+            });
+
+            document.getElementById('tarea-lenta').value = '';
+            document.getElementById('area-capacitacion').value = '';
+            document.getElementById('propuesta-cambio').value = '';
+            dynamicTaskList = [];
+            renderTaskRows();
+            document.getElementById('tools-used').value = '';
+            document.getElementById('assigned-task').value = '';
+            document.getElementById('task-deviation').value = '';
+            document.getElementById('partial-compliance').value = '';
+            document.getElementById('timer-task-name').value = '';
+            document.getElementById('manual-time').value = '';
+            stopTimer();
+            editingId = null;
+        }
+
+        function editRecord(id) {
+            const record = records.find(r => r.id === id);
+            if (record) {
+                populateForm(record);
+                editingId = id;
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function deleteRecord(id) {
+            if (confirm('¿Está seguro de eliminar este registro?')) {
+                records = records.filter(r => r.id !== id);
+                localStorage.setItem('fruteria_registros_v2', JSON.stringify(records));
+                renderRecords();
+            }
+        }
+
+        function renderRecords() {
+            const container = document.getElementById('records-container');
+            if (records.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-center py-4">No hay registros guardados.</p>';
+                return;
+            }
+
+            container.innerHTML = records.map(record => `
+                <div class="record-card flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div class="flex-1">
+                        <h4 class="font-bold text-lg text-gray-800">${record.nombre} <span class="text-sm font-normal text-gray-500">- ${record.cargo || 'Sin cargo'}</span></h4>
+                        <p class="text-sm text-gray-600">📅 ${record.fecha} | ⏱️ ${record.tiempoCronometro} | Tarea medida: ${record.timerTaskName || 'N/A'}</p>
+                    </div>
+                    <div class="flex gap-2 flex-wrap">
+                        <button onclick="editRecord('${record.id}')" class="btn-secondary text-sm">✏️ Editar</button>
+                        <button onclick="exportPDF('${record.id}')" class="btn-primary text-sm">📄 PDF</button>
+                        <button onclick="deleteRecord('${record.id}')" class="btn-danger">🗑️</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // --- Export PDF ---
+        function exportPDF(id) {
+            const record = records.find(r => r.id === id);
+            if (!record) return;
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            
+            doc.setFillColor(39, 174, 96);
+            doc.rect(0, 0, 210, 20, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(16);
+            doc.text('REPORTE DE EVALUACIÓN - GESTIÓN LABORAL FRUTERÍA', 105, 13, { align: 'center' });
+
+            doc.setTextColor(0, 0, 0);
+            doc.setFontSize(12);
+            let yPos = 30;
+
+            const addSection = (title, fields) => {
+                if (yPos > 270) {
+                    doc.addPage();
+                    yPos = 20;
+                }
+                doc.setFillColor(212, 234, 200);
+                doc.rect(10, yPos - 5, 190, 8, 'F');
+                doc.setFont(undefined, 'bold');
+                doc.text(title, 15, yPos);
+                yPos += 10;
+                doc.setFont(undefined, 'normal');
+                fields.forEach(field => {
+                    const splitText = doc.splitTextToSize(`${field.label}: ${field.value || 'N/A'}`, 180);
+                    doc.text(splitText, 15, yPos);
+                    yPos += (splitText.length * 7) + 2;
+                });
+                yPos += 5;
+            };
+
+            const formatTasks = (tasks) => tasks && tasks.length > 0 ? tasks.map(t => `${t.category}: ${t.detail}`).join(' | ') : 'N/A';
+
+            addSection('1. Datos Generales', [
+                { label: 'Trabajador', value: record.nombre },
+                { label: 'Cargo', value: record.cargo },
+                { label: 'Tiempo en empresa', value: record.tiempoEmpresa },
+                { label: 'Fecha', value: record.fecha }
+            ]);
+
+            addSection('2. Encuesta de Satisfacción', [
+                { label: 'Satisfacción responsabilidades', value: record.valResponsabilidadesDiarias ? record.valResponsabilidadesDiarias + '/5' : 'N/A' },
+                { label: 'Herramientas y recursos', value: record.valHerramientasRecursos ? record.valHerramientasRecursos + '/5' : 'N/A' },
+                { label: 'Comunicación y claridad', value: record.valComunicacion ? record.valComunicacion + '/5' : 'N/A' },
+                { label: 'Procesos lentos', value: record.tareaLenta },
+                { label: 'Área de capacitación', value: record.areaCapacitacion },
+                { label: 'Propuesta de cambio', value: record.propuestaCambio }
+            ]);
+
+            addSection('3. Tareas y Herramientas', [
+                { label: 'Lista de tareas', value: formatTasks(record.dynamicTasks) },
+                { label: 'Herramientas', value: record.herramientas },
+                { label: 'Tarea asignada', value: record.tareaAsignada }
+            ]);
+
+            addSection('4. Valoraciones Personales', [
+                { label: 'Sentimiento en el trabajo', value: record.valSentimientoTrabajo ? record.valSentimientoTrabajo + '/5' : 'N/A' },
+                { label: 'Sentimiento con sueldo', value: record.valSentimientoSueldo ? record.valSentimientoSueldo + '/5' : 'N/A' },
+                { label: 'Sentimiento con el equipo', value: record.valSentimientoEquipo ? record.valSentimientoEquipo + '/5' : 'N/A' },
+                { label: 'Sentimiento con el jefe', value: record.valSentimientoJefe ? record.valSentimientoJefe + '/5' : 'N/A' },
+                { label: 'Sentimiento con responsabilidades', value: record.valSentimientoResponsabilidades ? record.valSentimientoResponsabilidades + '/5' : 'N/A' }
+            ]);
+
+            addSection('5. Observaciones y Tiempos', [
+                { label: 'Desviación de tarea', value: record.desviacionTarea },
+                { label: 'Cumplimiento parcial', value: record.cumplimientoParcial },
+                { label: 'Tarea medida en cronómetro', value: record.timerTaskName },
+                { label: 'Tiempo cronómetro', value: record.tiempoCronometro },
+                { label: 'Tiempo manual (min)', value: record.tiempoManual }
+            ]);
+
+            doc.save(`reporte_${record.nombre}_${Date.now()}.pdf`);
+        }
+
+        // --- Export CSV ---
+        function exportCSV() {
+            if (records.length === 0) {
+                alert('No hay registros para exportar.');
+                return;
+            }
+
+            const headers = [
+                'ID', 'Fecha', 'Nombre', 'Cargo', 'Tiempo Empresa', 
+                'Sat. Responsabilidades', 'Sat. Herramientas', 'Sat. Comunicación',
+                'Tarea Lenta', 'Area Capacitacion', 'Propuesta Cambio',
+                'Lista Tareas', 'Herramientas', 'Tarea Asignada',
+                'Sentimiento Trabajo', 'Sentimiento Sueldo', 'Sentimiento Equipo', 
+                'Sentimiento Jefe', 'Sentimiento Responsabilidades',
+                'Desviacion Tarea', 'Cumplimiento Parcial', 'Tarea Medida', 'Tiempo Cronometro', 'Tiempo Manual'
+            ];
+            
+            const csvRows = records.map(r => {
+                const tasksStr = (r.dynamicTasks || []).map(t => `${t.category}:${t.detail}`).join(' | ');
+                return [
+                    r.id, r.fecha, r.nombre, r.cargo, r.tiempoEmpresa,
+                    r.valResponsabilidadesDiarias, r.valHerramientasRecursos, r.valComunicacion,
+                    `"${(r.tareaLenta || '').replace(/"/g, '""')}"`,
+                    `"${(r.areaCapacitacion || '').replace(/"/g, '""')}"`,
+                    `"${(r.propuestaCambio || '').replace(/"/g, '""')}"`,
+                    `"${tasksStr.replace(/"/g, '""')}"`,
+                    r.herramientas, r.tareaAsignada,
+                    r.valSentimientoTrabajo, r.valSentimientoSueldo, r.valSentimientoEquipo,
+                    r.valSentimientoJefe, r.valSentimientoResponsabilidades,
+                    `"${(r.desviacionTarea || '').replace(/"/g, '""')}"`,
+                    `"${(r.cumplimientoParcial || '').replace(/"/g, '""')}"`,
+                    r.timerTaskName, r.tiempoCronometro, r.tiempoManual
+                ];
+            });
+
+            const csvContent = [headers.join(','), ...csvRows.map(row => row.join(','))].join('\n');
+            const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.setAttribute('href', url);
+            link.setAttribute('download', `registros_fruteria_${Date.now()}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Initialize
+        setupScales();
+        renderRecords();
+    </script>
+</body>
+</html>
+
